@@ -1,0 +1,765 @@
+<!doctype html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang=""> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang=""> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9" lang=""> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang=""> <!--<![endif]-->
+		<head>
+				<meta charset="utf-8">
+				<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+				<title>Heatmeter</title>
+				<meta name="description" content="">
+				<meta name="author" content="biglab.at - Oskar Holowaty" />
+				<meta name="viewport" content="width=device-width, initial-scale=1">
+
+				<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+				<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+				<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.34.5/css/bootstrap-dialog.min.css">
+<!--
+				<link rel="stylesheet" href="./css/bootstrap.min.css">
+				<link rel="stylesheet" href="./css/bootstrap-theme.min.css">
+				<link rel="stylesheet" href="./css/bootstrap-dialog.min.css">
+	-->
+				<style>
+						body {
+								padding-top: 50px;
+								padding-bottom: 20px;
+						}
+						a.disabled {
+							Visibility:hidden; /*:none;*/
+						}
+						.lastUpdateContainer {
+/*border: 0px solid transparent;    
+    -webkit-transition: box-shadow 2s linear;
+    -moz-transition: box-shadow 2s linear;
+    transition: box-shadow 2s linear;*/
+						}
+						.lastUpdateContainer.active {
+border-color: white;
+    -webkit-box-shadow: 0 0 10px 10px white;
+    -moz-box-shadow: 0 0 10px 1px white;
+    box-shadow: 0 0 10px 10px white;
+    /* in order: x offset, y offset, [blur size], [spread size], color */
+    -webkit-transition: box-shadow 1s linear;
+    -moz-transition: box-shadow 1s linear;
+    transition: box-shadow 1s linear;
+						}
+				</style>
+
+				<!--[if lt IE 9]>
+						<script src="js/vendor/html5-3.6-respond-1.4.2.min.js"></script>
+				<![endif]-->
+		</head>
+		<body>
+				<!--[if lt IE 8]>
+						<p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+				<![endif]-->
+		<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="#">Heatmeter</a>
+				</div>
+				<div id="navbar" class="navbar-collapse collapse">
+					<ul class="nav navbar-nav">
+						<li><a href="#" id="settings" data-toggle="modal" data-target="#settingsDialog">Settings</a></li>
+						<li><a href="#" id="debug" class="hidden" data-toggle="modal" data-target="#debugDialog">Debug</a></li>
+					</ul>
+					<ul class="nav navbar-nav navbar-right">
+							<li class=""><p class="navbar-text lastUpdateContainer">Last updated: <span class="lastUpdateTime"></span></p></li>
+							<li><a href="#" id="refreshToggle" data-autorefresh='false' ><span id="refreshGlyph" class="glyphicon" aria-hidden="true"></span></a></li>
+							<li><a href="#" id="manualRefresh" class="disabled"><span id="manualGlyph" class="glyphicon glyphicon glyphicon-refresh" aria-hidden="true"></span></a></li>
+						</ul>
+				</div><!--/.navbar-collapse -->
+			</div>
+		</nav>
+
+
+
+		<div class="container">
+			<!-- Example row of columns -->
+			<div class="row">
+				<div class="col-md-4">
+					<h2>Overview</h2>
+					<table id="temperatureTable" class="table table-hover table-striped table-bordered" cellspacing="0" width="100%">
+							<thead>
+								<tr>
+									<th>Sensor</th>
+									<th>Temperature</th>
+									<!-- <th>Visibility</th> -->
+								</tr>
+							</thead>
+						<tbody>
+						</tbody>
+					</table>
+				</div>
+				<div class="col-md-8">
+					<h2>Chart</h2>
+					<div class="canvas-holder" id="temperatureChart">
+
+					</div>
+			 </div>
+			</div>
+
+			<hr>
+
+			<footer>
+				<p>&copy; <a href="https://biglab.at">biglab.at</a></p>
+			</footer>
+
+
+
+			<div id="settingsDialog" class="modal fade">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+							<h4 class="modal-title">Settings Dialog</h4>
+						</div>
+						<div class="modal-body">
+							<form>
+								<div class="form-group">
+									<label>
+										<input type="checkbox" name="settings_debug" id="settings_debug" value="">
+										Debug
+									</label>
+								</div>
+								<div class="form-group">
+									<label>
+										<input type="checkbox" name="settings_simulation" id="settings_simulation" value="">
+										Simulation
+									</label>
+								</div>
+								<div class="form-group">
+									<label>
+										<input type="checkbox" name="settings_autorefresh" id="settings_autorefresh" value="">
+										Auto-Refresh
+									</label>
+								</div>
+								<div class="form-group">
+									<label>
+										<input type="checkbox" name="settings_temperaturehistory" id="settings_temperaturehistory" value="">
+										History
+									</label>
+								</div>								
+								<div class="form-group">
+									<label for="settings_refreshrate">Refresh rate</label>
+									<input type="number" name="settings_refreshrate" id="settings_refreshrate" value="" min="3" max="120" step="1" >
+								</div>			
+							</form>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-warning" data-dismiss="modal" id="clearHistory">Clear history</button>
+							<button type="button" class="btn btn-danger" data-dismiss="modal" id="clearDatabase">Clear database</button>
+							<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-primary" data-dismiss="modal" id="settingsSave" >Save changes</button>
+						</div>
+					</div><!-- /.modal-content -->
+				</div><!-- /.modal-dialog -->
+			</div><!-- /.modal -->
+
+
+			<div id="debugDialog" class="modal fade">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+							<h4 class="modal-title">Settings Dialog</h4>
+						</div>
+						<div class="modal-body">
+							<form>									
+								<div class="form-group">
+									<label for="settings_temperatureserviceuri">temperature service uri</label>
+									<input type="text" name="settings_temperatureserviceuri" id="settings_temperatureserviceuri" value="" class="disabled" disabled>
+								</div>
+								<div class="form-group">
+									<label for="settings_sensorkey">json key</label>
+									<input type="text" name="settings_sensorkey" id="settings_sensorkey" value="" class="disabled" disabled>
+								</div>
+								<div class="form-group">
+									<label for="settings_sensorkey">Enabled sensors</label>
+									<input type="text" name="settings_sensorkey" id="settings_sensorkey" value="" class="disabled" disabled>
+								</div>
+							</form>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						</div>
+					</div><!-- /.modal-content -->
+				</div><!-- /.modal-dialog -->
+			</div><!-- /.modal -->
+
+
+
+		</div> <!-- /container -->
+
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+		<script>window.jQuery || document.write('<script src="./js/jquery-1.11.2.min.js"><\/script>')</script>
+		<!--
+		<script>
+			window.$ = window.jQuery = require('./js/jquery-1.11.2.min.js');
+			console.log( [$, jQuery ])
+		</script>
+		-->
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.34.5/js/bootstrap-dialog.min.js"></script>
+<!--
+		<script src="./js/bootstrap.min.js"></script>
+		<script src="./js/bootstrap-dialog.min.js"></script>
+-->
+		<script src="./js/jquery.color.js"></script>
+		<script src="./js/jquery.schedule.js"></script>
+		<!--<script src="./js/ydn.db-is-core-qry.js"></script> -->
+		<script src="./js/ydn.db-is-core-e-qry-dev.js"></script>
+
+		<script src="./js/jquery.canvasjs.min.js"></script>
+
+		<script type="text/javascript">
+			var debugServiceURI = "http://cdn.holowaty.me/heatmeter.php";
+			var debugServiceURI = "http://192.168.1.55/service/temp";
+			
+			var _dbname = 'test3';
+			var _defaults = {
+				'debug' : false,
+				'simulation': false,
+				'temperatureServiceURI': '/service/temp',
+				'autorefresh' : true,
+				'refreshRate' : 3,
+				'temperatureHistory': false,
+				'sensorKey' : 'temp',
+				'enabledSensors' : ['00','01','02','03']
+			}
+
+			var _settings_tablename = 'settings';
+			var _temperaturehistory_tablename = 'temphistory';
+			var _schema = {
+				stores:[{
+					name:_settings_tablename,
+					keyPath:"key",
+					autoIncrement: true
+				}, {
+					name: _temperaturehistory_tablename,
+					indexes : [{
+						name: 'timestamp',
+						unique: true,
+						keyPath: 'timestamp'
+					}],
+					//keyPath:"timestamp",
+					autoIncrement: true
+				}]
+			};
+
+			var _SETTINGS = {};
+			var _DB = {};
+			var _AUTOREFRESH_CTX = null;
+			var _CLEANUP_CTX = null;
+			var _CHART = null;
+
+
+
+			/**
+			 *
+			 * FUNCTIONS
+			 *
+			 */
+			
+			function init() {
+				var module = 'ydn.db';
+				var level = 'warning'; // warning, info, fine, finest, all
+				ydn.debug.log(module, level);
+
+				_DB = new ydn.db.Storage(_dbname,_schema);
+				loadSettings();
+			}
+
+			/**
+			*
+			* EVENTS
+			*
+			*/
+
+			$(document).ready(function() {
+				$("#refreshToggle").on('click',function() {
+					var autorefresh = $(this).data('autorefresh');
+					if (autorefresh) {
+						stopAutoRefresh();
+						autorefresh = false;
+						$("#manualRefresh").removeClass('disabled');
+					}
+					else {
+						startAutoRefresh();
+						autorefresh = true;
+						$("#manualRefresh").addClass('disabled');
+					}
+					renderAutorefresh(autorefresh);
+					$(this).data('autorefresh',autorefresh);
+				});
+
+				$("#manualRefresh").click(function() {
+					var autorefresh = $("#refreshToggle").data('autorefresh');
+					if (autorefresh)
+						return false;
+					logMessage("manual refresh");
+					getTemperatureFromService();
+				});
+
+				$('#debugDialog').on('show.bs.modal', function (e) {
+					loadSettingsIntoDialog();
+				})
+				$('#settingsDialog').on('show.bs.modal', function (e) {
+					loadSettingsIntoDialog();
+				});
+
+				$("#settingsSave").on('click', function (e) {
+					$.each(_SETTINGS, function(idx, obj) {
+						try {
+							var settingsField = $("#settings_"+obj.key.toLowerCase());
+							
+							if (settingsField.is(":disabled")) {
+								logMessage(obj.key+" disabled setting");
+								return;
+							}
+
+							if (jQuery.type( obj.value ) === "boolean") {
+								if (settingsField.is(':checked')) {
+									obj.value = true;
+								}
+								else {
+									obj.value = false;
+								}
+							}
+							else {
+								obj.value = settingsField.val();
+							}
+						}
+						catch(e) {
+							logException(e);
+						}
+					});
+					saveSettings();
+				});
+
+				$("#clearDatabase").on('click',function() {
+					ydn.db.deleteDatabase(_dbname).done(function() {
+						init();
+						showAlert('Database reinitialized');
+					}).fail(function(e) {
+						logException(e);
+						showAlert("Delete database failed");
+					})
+				});
+
+				$("#clearHistory").on('click',function() {
+					_DB.clear(_temperaturehistory_tablename).done(function() {
+						showInformation('History cleared!');
+					}).fail(function(e) {
+						showAlert('Failed to clear history!');
+						logException(e);
+					});
+				});
+			});
+
+			function changeChartVisibility(e) {
+				var sensor = $(this).data('sensor');
+				if($(this).is(":checked")) {
+					showAlert(sensor+" enabled");
+				}
+				else {
+					showAlert(sensor + " disabled");
+				}
+			}
+			/*
+			 *
+			 * Settings
+			 *
+			 */
+
+			function loadSettingsIntoDialog() {
+				$.each(_SETTINGS, function(idx, obj) {
+					try {
+						var settingsField = $("#settings_"+obj.key.toLowerCase());
+						if (jQuery.type( obj.value ) === "boolean") {
+							if (obj.value) {
+								settingsField.attr("checked","checked");
+							}
+							else {
+								settingsField.removeAttr("checked");
+							}
+						}
+						else {
+							settingsField.val(obj.value);
+						}
+					}
+					catch(e) {
+						logException(e);
+					}
+				});
+			}
+
+
+
+
+			function checkDebugMenu() {
+				var debug = _getSettingByKey('debug');
+				if (debug) {
+					$("#debug").removeClass('hidden');
+				}
+				else {
+					$("#debug").addClass('hidden');
+				}
+			}
+
+			function loadSettings() {
+				// load settings from db
+				var df = _DB.values(_settings_tablename);
+				df.done(function (items) {
+					// init settings
+					if (items.length == 0) {
+						_SETTINGS = _defaults;
+						saveSettings(true);
+					}
+					else {
+						_SETTINGS = items;
+					}
+					logMessage("settings loaded!");
+					start();
+				});
+
+			}
+
+			function saveSettings(init) {
+				if (init) {
+					// init default settings and reload
+					$.each(_SETTINGS, function(idx, obj) {
+						_DB.put(_settings_tablename, {'key': idx, 'value': obj}).fail(function(e) {
+							 showAlert('Cannot initalize settings!');
+						}).done(function() {
+							loadSettings();
+						});
+					});
+					// reload settings as db objects
+				}else {
+					$.each(_SETTINGS, function(idx, obj) {
+						_DB.put(_settings_tablename, {'key': obj.key, 'value': obj.value}).fail(function(e) {
+							showAlert('Cannot load settings!');
+						}).done(function() {
+								logMessage("settings saved!");
+								start(true);
+						});
+					});
+				}
+
+			}
+
+
+			function _getSettingByKey(key) {
+				var result = null;
+				$.each(_SETTINGS, function(idx, obj) {
+					try {
+						if (obj.key == key) {
+							result = obj.value;
+							return;
+						}
+					}
+					catch(e) {
+						logException(e);
+					}
+				});
+				if (result == null) {
+					result = _defaults[key];
+				}
+				return result;
+			}
+
+			function _getServiceURL() {
+				var simulation = _getSettingByKey('simulation');
+				if (simulation) {
+					return debugServiceURI;
+				}
+				return _getSettingByKey('temperatureServiceURI')
+			}
+
+			var firstPageLoad = true;
+			function start(restarted) {
+				if (restarted) {
+					// TODO: clear ctx if enabled
+					stopAutoRefresh();
+				}
+				logMessage("start application!");
+				var autorefresh = _getSettingByKey('autorefresh');
+				renderAutorefresh(autorefresh);
+
+				if (autorefresh) {
+					$("#manualRefresh").addClass('disabled');
+				}
+				else {
+					$("#manualRefresh").removeClass('disabled');
+				}
+
+				if (firstPageLoad) {
+					loadTemperatureHistory();
+					getTemperatureFromService();
+
+					_CLEANUP_CTX = $.schedule({time:30000, repeat: true,protect:true,func: cleanUpTemperatureHistory});
+				}
+
+				if (autorefresh) {
+					$.schedule(2000,false,startAutoRefresh);
+				}
+
+				checkDebugMenu();
+				firstPageLoad = false;
+			}
+
+
+			function renderAutorefresh(isEnabled) {
+				var autorefreshGlyph = $("#refreshGlyph");
+				var autorefreshToggle = $("#refreshToggle")
+				autorefreshGlyph.removeClass("glyphicon-play").removeClass("glyphicon-pause");
+				if (isEnabled){
+					autorefreshToggle.data('autorefresh',true);
+					autorefreshGlyph.addClass("glyphicon-pause");
+				}
+				else {
+					autorefreshToggle.data('autorefresh',false);
+					autorefreshGlyph.addClass("glyphicon-play");
+				}
+			}
+
+
+			var stdColor = $(".lastUpdateTime").css("color");	
+			function getTemperatureFromService() {
+				$.ajax(_getServiceURL()).done(function(data,textStatus, jqXHR) {
+					logMessage("data retrieved");
+					var dateString = new Date().toLocaleTimeString();
+					$(".lastUpdateTime").html(dateString);
+					$(".lastUpdateContainer").animate({"color":"white"},500,'linear',function() {
+						$(this).animate({"color":stdColor},800,'linear',function() {
+							//showAlert("done");
+						})
+					}); //.delay(700).css("color",stdColor);
+					addNewTemperatureData(data);
+				}).error(function(jqXHR, textStatus, errorThrown) {
+					logMessage(textStatus);
+				});
+			}
+
+			function loadTemperatureHistory() {
+				// load history from db and chart!
+				var history = _getSettingByKey('temperatureHistory')
+				if (history) {
+					var df = _DB.values(_temperaturehistory_tablename);
+					var timeDelta = new Date().getTime() - 60; // one minute;
+					//var df = _DB.from(_temperaturehistory_tablename).where("timestamp", ">",timeDelta).list();
+					df.done(function(items) {
+						renderTemperatureHistory(items);
+					});
+				}
+			}
+
+			function addNewTemperatureData(data) {
+				var date = new Date();
+
+				// save for history in db
+				var history = _getSettingByKey('temperatureHistory')
+				if (history) {
+
+					data["timestamp"] = date.getTime();
+					_DB.put(_temperaturehistory_tablename, data ).done(function(idx) {
+						_DB.get(_temperaturehistory_tablename,idx).done(function(data) {
+							logMessage("saved data");
+							// update chart
+							renderTemperatureChart(data.timestamp,data);
+							//_CHART.addData(data, new Date());
+							renderTemperatureTable(data);
+
+						}).fail(function(e) {
+							logException(e);
+						})
+					}).fail(function(e) {
+						logException(e);
+					});
+
+				}else {
+					// update chart
+					renderTemperatureChart(date.getTime(),data);
+					//_CHART.addData(data, new Date());
+					renderTemperatureTable(data);
+				}
+			}
+
+			function cleanUpTemperatureHistory(){
+				return;
+				var timeDelta = new Date().getTime() - (60 * 60); // 1 hour
+
+				_DB.from(_temperaturehistory_tablename).where('timestamp','<',timeDelta).list().done(function(items) {
+					$.each(items, function(r) {
+						_DB.clear(_temperaturehistory_tablename,r._id);
+					});
+
+				});
+
+				if (!_getSettingByKey('temperatureHistory')) {
+					$.cancel(_CLEANUP_CTX);
+				}
+				logMessage("cleanUpTemperatureHistory done");
+			}
+			function renderTemperatureHistory(items) {
+				$.each(items,function(idx,obj) {
+					renderTemperatureChart(obj.timestamp,obj);
+				});
+			}
+
+			var dataset = {};
+			var chartDataDef = [];
+
+			function renderTemperatureChart(date,data) {
+				$.each(data,function(idx,obj) {
+					if (idx == "timestamp")
+						return;
+					// OSKAR CAUTION DEBUG
+					/*
+					if (idx != "temp01")
+						return;
+					*/
+					if (jQuery.type( dataset[idx] ) === "undefined"  ) {
+						dataset[idx] = [];
+						chartDataDef.push({
+							type: "line",
+							legendText: idx,
+							legendText: idx,
+							xValueType: "dateTime",
+							showInLegend:true,
+
+							dataPoints : dataset[idx]
+						});
+					}
+					dataset[idx].push({x: date, y: parseFloat(obj)});
+
+					//if (dataset[idx].length > 20 ) {
+
+						if ($("#refreshToggle").data('autorefresh')) {
+						while (dataset[idx].length > 10) {
+							//if (data.length > 3) {
+							dataset[idx].shift();
+						}
+					}
+					//}
+
+				});
+
+				if (_CHART == null) {
+					var refreshrate = _getSettingByKey('refreshRate');
+					_CHART = new CanvasJS.Chart("temperatureChart",{
+						zoomEnabled: true,
+						height: '400',
+						legend: {
+							cursor: "pointer",
+							itemclick: function (e) {
+									console.log(e.dataSeries);
+									console.log(e);
+									if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+											e.dataSeries.visible = false;
+									} else {
+											e.dataSeries.visible = true;
+									}
+
+									e.chart.render();
+							}
+						},
+						axisX: {						
+							title: "Time",
+							valueFormatString: "HH:mm:ss",
+							labelAngle: -50,
+							//interval: refreshrate,
+						},
+						axisY: {						
+							title: "Temperature"
+						},
+						data: chartDataDef
+					});
+
+				}
+
+				_CHART.render();	
+			}
+
+
+			function renderTemperatureTable(data) {
+				var table = $("#temperatureTable tbody");
+				table.empty();
+				$.each(data, function(idx, obj) {
+					if (idx == 'timestamp')
+						return;
+					var checked = "checked";
+					var checkbox = "<td><input class='sensor_visiblity' data-sensor='"+idx+"'type='checkbox' "+checked+"></td>";
+					checkbox = "";
+					var row = "<tr><th scope='row'>" + idx + "</th><td>"+obj+"</td>"+checkbox+"</tr>";
+					table.append(row);
+				});
+				$(".sensor_visiblity").on('change',changeChartVisibility);
+			}
+
+
+			function startAutoRefresh() {
+					getTemperatureFromService();
+					var refreshRate = _getSettingByKey('refreshRate');
+					_AUTOREFRESH_CTX = $.schedule({time:refreshRate*1000, repeat: true,protect:true,func: getTemperatureFromService});
+			}
+
+			function stopAutoRefresh() {
+				if (_AUTOREFRESH_CTX != null) {
+					$.cancel(_AUTOREFRESH_CTX);
+				}
+			}
+
+
+			/**
+			 *
+			 *	Logging / Dialogs
+			 *
+			 **/
+			function logMessage(str) {
+				if (_getSettingByKey('debug')) {
+					console.log(str);
+				}
+			}
+
+			function logException(e) {
+				console.log(e.message);
+			}
+
+			function showAlert(msg) {
+				BootstrapDialog.alert({
+						title: 'WARNING',
+						message: msg,
+						type: BootstrapDialog.TYPE_WARNING, // <-- Default value is BootstrapDialog.TYPE_PRIMARY
+				});
+			}
+
+			function showInformation(msg) {
+				BootstrapDialog.alert({
+						title: 'INFORMATION',
+						message: msg,
+						type: BootstrapDialog.TYPE_INFORMATION, // <-- Default value is BootstrapDialog.TYPE_PRIMARY
+				});
+			}
+
+
+
+
+/*************************************************************
+
+start application !!!
+
+***************************************************************/
+			init();
+
+		</script>
+
+		</body>
+</html>
